@@ -97,6 +97,24 @@ else
     echo "[*] Mode IP:Port (domain belum diset)"
 fi
 
+# ===== AUTO INSTALL RUNTIME =====
+_install_php() {
+    if ! command -v php &>/dev/null; then
+        echo "[*] Installing PHP runtime..."
+        apt-get update -qq 2>/dev/null || true
+        apt-get install -y -qq php-cli php-curl php-mbstring php-xml php-mysql php-zip php-gd 2>/dev/null || true
+    fi
+}
+
+_install_python() {
+    if ! command -v python3 &>/dev/null; then
+        echo "[*] Installing Python runtime..."
+        apt-get update -qq 2>/dev/null || true
+        apt-get install -y -qq python3 python3-pip 2>/dev/null || true
+        pip3 install flask fastapi uvicorn gunicorn django -q 2>/dev/null || true
+    fi
+}
+
 # ===== DETECT FRAMEWORK =====
 FW="${WEB_TYPE:-auto}"
 
@@ -295,6 +313,7 @@ case "${FW}" in
 
     # PHP
     php)
+        _install_php
         _composer_install
         DOCROOT="."
         [ -d "public" ] && DOCROOT="public"
@@ -304,6 +323,7 @@ case "${FW}" in
 
     # LARAVEL
     laravel)
+        _install_php
         _composer_install
         [ ! -f ".env" ] && cp .env.example .env 2>/dev/null || true
         php artisan key:generate --force 2>/dev/null || true
@@ -315,12 +335,14 @@ case "${FW}" in
 
     # WORDPRESS
     wordpress)
+        _install_php
         echo "[*] WordPress mode - PHP server di port ${SERVER_PORT}"
         php -S 0.0.0.0:${SERVER_PORT} -t .
         ;;
 
     # PYTHON
     python)
+        _install_python
         _pip_install
         ENTRY="app.py"
         [ -f "main.py" ] && ENTRY="main.py"
@@ -339,6 +361,7 @@ case "${FW}" in
 
     # DJANGO
     django)
+        _install_python
         _pip_install
         echo "[*] Django di port ${SERVER_PORT}"
         python3 manage.py migrate --run-syncdb 2>/dev/null || true

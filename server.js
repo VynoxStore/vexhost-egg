@@ -82,8 +82,8 @@ function createDatabase(domain) {
 
     log(`[DB] Membuat database ${db_name} untuk ${domain}...`);
     mysqlExec(`CREATE DATABASE IF NOT EXISTS \`${db_name}\`;`);
-    mysqlExec(`CREATE USER IF NOT EXISTS '${db_user}'@'%' IDENTIFIED BY '${db_pass}';`);
-    mysqlExec(`GRANT ALL PRIVILEGES ON \`${db_name}\`.* TO '${db_user}'@'%';`);
+    // MariaDB compatible: GRANT otomatis create user
+    mysqlExec(`GRANT ALL PRIVILEGES ON \`${db_name}\`.* TO '${db_user}'@'%' IDENTIFIED BY '${db_pass}';`);
     mysqlExec(`FLUSH PRIVILEGES;`);
 
     const creds = { db_name, db_user, db_pass, db_host };
