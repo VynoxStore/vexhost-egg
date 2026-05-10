@@ -198,19 +198,22 @@ _start_filebrowser() {
 
         if command -v filebrowser &>/dev/null; then
             echo "[*] Starting FileBrowser di port ${FB_PORT}..."
-            filebrowser config init -d /home/container/.vexhost/fb.db >/dev/null 2>&1 || true
-            filebrowser config set \
-                -d /home/container/.vexhost/fb.db \
-                --address 0.0.0.0 \
-                --port ${FB_PORT} \
-                --root /home/container \
-                --noauth false >/dev/null 2>&1 || true
-            filebrowser users add admin "${FB_PASS}" \
-                -d /home/container/.vexhost/fb.db \
-                --perm.admin >/dev/null 2>&1 || true
-            filebrowser -d /home/container/.vexhost/fb.db &
-            echo "[*] FileBrowser jalan di port ${FB_PORT}"
-            [ -n "${CUSTOM_DOMAIN}" ] && echo "[*] File Manager: https://files.${CUSTOM_DOMAIN}"
+            FB_DB="/home/container/.vexhost/fb.db"
+            rm -f ${FB_DB}
+            filebrowser -d ${FB_DB} config init >/dev/null 2>&1 || true
+            filebrowser -d ${FB_DB} config set --address 0.0.0.0 --port ${FB_PORT} --root /home/container >/dev/null 2>&1 || true
+            filebrowser -d ${FB_DB} users add admin "${FB_PASS}" --perm.admin >/dev/null 2>&1 || true
+            filebrowser -d ${FB_DB} >> /home/container/logs/filebrowser.log 2>&1 &
+            FB_PID=$!
+            sleep 2
+            if kill -0 $FB_PID 2>/dev/null; then
+                echo "[*] FileBrowser jalan di port ${FB_PORT}"
+                [ -n "${CUSTOM_DOMAIN}" ] && echo "[*] File Manager: https://files.${CUSTOM_DOMAIN}"
+            else
+                echo "[*] FileBrowser gagal start!"
+            fi
+        else
+            echo "[*] FileBrowser tidak ditemukan!"
         fi
     fi
 }
