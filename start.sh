@@ -445,8 +445,51 @@ case "${FW}" in
         fi
         ;;
 
+    # PHP + NODE.JS (jalanin keduanya sekaligus)
+    php+node|phpnode)
+        _install_php
+        _composer_install
+
+        # ===== Jalanin Node.js backend dulu di background =====
+        NODE_DIR="node"
+        [ -d "backend" ] && NODE_DIR="backend"
+        [ -d "api" ] && NODE_DIR="api"
+
+        NODE_PORT="${SERVER_PORT_2:-19111}"
+
+        if [ -d "${NODE_DIR}" ] && [ -f "${NODE_DIR}/package.json" ]; then
+            echo "[*] Installing Node.js deps di folder ${NODE_DIR}..."
+            cd ${NODE_DIR}
+            npm install --quiet 2>/dev/null || true
+
+            # Update .env port kalau ada
+            [ -f ".env" ] && sed -i "s/^PORT=.*/PORT=${NODE_PORT}/" .env || echo "PORT=${NODE_PORT}" >> .env
+
+            echo "[*] Starting Node.js backend di port ${NODE_PORT}..."
+            PORT=${NODE_PORT} npm start >> /home/container/logs/node.log 2>&1 &
+            NODE_PID=$!
+            sleep 3
+            if kill -0 $NODE_PID 2>/dev/null; then
+                echo "[*] Node.js backend jalan di port ${NODE_PORT} (PID: ${NODE_PID})"
+            else
+                echo "[*] Node.js backend gagal start, cek logs/node.log"
+            fi
+            cd /home/container
+        else
+            echo "[*] Folder node/backend/api tidak ditemukan, skip Node.js"
+        fi
+
+        # ===== Jalanin PHP frontend =====
+        DOCROOT="."
+        [ -d "php" ] && DOCROOT="php"
+        [ -d "public" ] && DOCROOT="public"
+        echo "[*] PHP frontend di port ${SERVER_PORT} (docroot: ${DOCROOT})"
+        php -S 0.0.0.0:${SERVER_PORT} -t ${DOCROOT}
+        ;;
+
     *)
         echo "[ERROR] WEB_TYPE '${FW}' tidak dikenali!"
+        echo "Pilihan: auto, static, php, php+node, laravel, wordpress, python, django, node, express, nextjs, nuxt, react-vite, vue, react-cra"
         exit 1
         ;;
 esac
