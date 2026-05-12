@@ -454,6 +454,8 @@ case "${FW}" in
         NODE_DIR="node"
         [ -d "backend" ] && NODE_DIR="backend"
         [ -d "api" ] && NODE_DIR="api"
+        # Pastikan cari di root container
+        [ -d "/home/container/node" ] && NODE_DIR="/home/container/node"
 
         NODE_PORT="${SERVER_PORT_2:-19111}"
 
@@ -483,6 +485,8 @@ case "${FW}" in
         DOCROOT="."
         [ -d "php" ] && DOCROOT="php"
         [ -d "public" ] && DOCROOT="public"
+        # php/ lebih prioritas dari public/
+        [ -d "php" ] && DOCROOT="php"
         echo "[*] PHP frontend di port ${SERVER_PORT} (docroot: ${DOCROOT})"
         php -S 0.0.0.0:${SERVER_PORT} -t ${DOCROOT}
         ;;
